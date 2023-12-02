@@ -16,6 +16,9 @@ t calculate_gcd(t a, t b) {
 
 
 shortDT f(int x) {
+
+    if(x != 0){ x = x * 3 + 1; }
+
     auto result = os::lab1::compfunc::compfunc(x);
 
     while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
@@ -61,7 +64,13 @@ void manager(){
         if (std::holds_alternative<unsigned int>(resF) && std::holds_alternative<unsigned int>(resG)) {
             valueF = std::get<unsigned int>(resF);
             valueG = std::get<unsigned int>(resG);
-            std::cout << calculate_gcd(valueF,valueG) << std::endl;
+            std::cout << "GSD(f(x),g(x)): "<<  calculate_gcd(valueF,valueG) << std::endl;
+        }else if(!std::holds_alternative<unsigned int>(resF) && std::holds_alternative<unsigned int>(resG)){
+            std::cout << "F did not response" << std::endl;
+        }else if(std::holds_alternative<unsigned int>(resF) && !std::holds_alternative<unsigned int>(resG)){
+            std::cout << "G did not response" << std::endl;
+        }else{
+            std::cout << "Both function did not response" << std::endl;
         }
 
 
