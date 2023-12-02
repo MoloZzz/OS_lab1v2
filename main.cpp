@@ -3,8 +3,9 @@
 #include <future>
 #include "compfunc.h"
 
+
 namespace os::lab1::compfunc {
-    comp_result<unsigned> compfunc(int );
+    comp_result<unsigned> compfunc(int);
 }
 
 template<typename t>
@@ -41,18 +42,29 @@ os::lab1::compfunc::comp_result<unsigned> g(int x){
 
 void manager(){
     int x = 0;
+    unsigned int valueF;
+    unsigned int valueG;
+
+
     while (x != -1) {
         std::cin >> x;
 
-        auto futureF = std::async(std::launch::async,f, x);
-        auto futureG = std::async(std::launch::async,  g, x);
+        auto fResult = std::async(std::launch::async, f, x);
 
-        os::lab1::compfunc::comp_result<unsigned> resF = futureF.get();
-        os::lab1::compfunc::comp_result<unsigned> resG = futureG.get();
+        auto gResult = std::async(std::launch::async, g, x);
 
-        std::cout << "f(x): " << resF << " g(x): " << resG << std::endl;
+        os::lab1::compfunc::comp_result<unsigned> resF = fResult.get();
+        os::lab1::compfunc::comp_result<unsigned> resG = gResult.get();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        if (std::holds_alternative<unsigned int>(resF) && std::holds_alternative<unsigned int>(resG)) {
+            valueF = std::get<unsigned int>(resF);
+            valueG = std::get<unsigned int>(resG);
+            std::cout << calculate_gcd(valueF,valueG) << std::endl;
+        }
+
+
+
     }
 
 }

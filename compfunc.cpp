@@ -15,13 +15,13 @@ namespace os::lab1::compfunc {
 
     const int CASE3_ATTEMPTS = 3;
 
-    comp_result<unsigned> compfunc(int n) {
+    comp_result<int> compfunc(int n) {
         switch(n) {
             case 0:
-                std::this_thread::sleep_for(3s);
-                return comp_result<unsigned>(0xaa55U);
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+                return 24;
             case 1:
-                std::this_thread::sleep_for(1s);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
                 return hard_fault();
             case 2:
             {
@@ -29,16 +29,15 @@ namespace os::lab1::compfunc {
                 std::mutex m;
                 std::unique_lock<std::mutex> lock(m);
                 cv.wait(lock, []{return false;});
-                return {};
+                return soft_fault();
             }
             case 3:
-                static constinit int attempts = CASE3_ATTEMPTS;
-                std::this_thread::sleep_for(.5s);
+                static constinit int attempts = 3;
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 if (attempts-- > 0)
                     return soft_fault();
-                attempts = CASE3_ATTEMPTS;
-                return ~0U;
-
+                attempts = 3;
+                return 12;
             default:
                 return hard_fault();
         }
