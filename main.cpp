@@ -3,6 +3,7 @@
 #include <future>
 #include "compfunc.h"
 
+typedef os::lab1::compfunc::comp_result<unsigned> shortDT;
 
 namespace os::lab1::compfunc {
     comp_result<unsigned> compfunc(int);
@@ -14,7 +15,7 @@ t calculate_gcd(t a, t b) {
 }
 
 
-os::lab1::compfunc::comp_result<unsigned> f(int x) {
+shortDT f(int x) {
     auto result = os::lab1::compfunc::compfunc(x);
 
     while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
@@ -27,7 +28,7 @@ os::lab1::compfunc::comp_result<unsigned> f(int x) {
     return result;
 
 }
-os::lab1::compfunc::comp_result<unsigned> g(int x){
+shortDT g(int x){
     auto result = os::lab1::compfunc::compfunc(x);
 
     while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
@@ -53,8 +54,8 @@ void manager(){
 
         auto gResult = std::async(std::launch::async, g, x);
 
-        os::lab1::compfunc::comp_result<unsigned> resF = fResult.get();
-        os::lab1::compfunc::comp_result<unsigned> resG = gResult.get();
+        shortDT resF = fResult.get();
+        shortDT resG = gResult.get();
 
 
         if (std::holds_alternative<unsigned int>(resF) && std::holds_alternative<unsigned int>(resG)) {

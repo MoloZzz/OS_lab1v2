@@ -10,6 +10,10 @@
 
 
 namespace os::lab1::compfunc {
+
+    int generateNumber(int someNumb){
+        return someNumb*someNumb;
+    }
     using namespace std::chrono_literals;
     using duration = std::chrono::seconds;
 
@@ -39,7 +43,7 @@ namespace os::lab1::compfunc {
                 attempts = 3;
                 return 12;
             default:
-                return hard_fault();
+                return generateNumber(n);
         }
     }
 }
