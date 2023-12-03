@@ -16,6 +16,11 @@ namespace os::lab1::compfunc {
 
     const int CASE3_ATTEMPTS = 3;
 
+    void closeCompfunc(){
+        std::unique_lock<std::mutex> lock();
+
+    }
+
     comp_result<int> compfunc(int newN) {
         int n = newN;
 
