@@ -2,11 +2,9 @@
 #include <numeric>
 #include <future>
 #include <chrono>
+#include <fstream>
+#include <unordered_map>
 #include "compfunc.h"
-
-
-
-
 
 typedef os::lab1::compfunc::comp_result<unsigned> shortDT;
 
@@ -14,41 +12,52 @@ namespace os::lab1::compfunc {
     comp_result<unsigned> compfunc(int);
 }
 
+// Мемоізаційний кеш
+std::unordered_map<int, shortDT> memo_cache;
+
+shortDT memoized_compfunc(int x) {
+    // Перевірка, чи результат вже є у кеші
+    auto it = memo_cache.find(x);
+    if (it != memo_cache.end()) {
+        return it->second;
+    }
+
+    // Якщо результат не знайдено, викликаємо функцію та зберігаємо результат у кеш
+    auto result = os::lab1::compfunc::compfunc(x);
+
+    while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
+        std::cout << "." << std::flush;
+        result = os::lab1::compfunc::compfunc(x);
+    }
+
+    memo_cache[x] = result;
+    return result;
+}
+
 template<typename t>
 t calculate_gcd(t a, t b) {
     return std::gcd(a, b);
 }
 
-
 shortDT f(int x) {
-
-    if(x != 0){ x = x * 3 + 1; }
-
-    auto result = os::lab1::compfunc::compfunc(x);
-
-    while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
-        std::cout << "." << std::flush;
-        result = os::lab1::compfunc::compfunc(x);
+    if (x != 0) {
+        x = x * 3 + 1;
     }
 
-    std::cout <<"f(" << x << "): " << result << std::endl;
-
-    return result;
-
-}
-
-shortDT g(int x){
-    auto result = os::lab1::compfunc::compfunc(x);
-
-    while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
-        std::cout << "." << std::flush;
-        result = os::lab1::compfunc::compfunc(x);
-    }
-
-    std::cout <<"g(" << x << "): " << result << std::endl;
+    auto result = memoized_compfunc(x);
+    std::cout << "f(" << x << "): " << result << std::endl;
 
     return result;
 }
+
+shortDT g(int x) {
+    auto result = memoized_compfunc(x);
+    std::cout << "g(" << x << "): " << result << std::endl;
+
+    return result;
+}
+
+
 
 
 
@@ -91,8 +100,8 @@ void manager(){
                     break;
                 case std::future_status::ready:
                     if(!f_done){
-                    std::cout << "readyF(x)!\n";
-                    f_done = true;
+                        std::cout << "readyF(x)!\n";
+                        f_done = true;
                     }
 
                     break;
@@ -144,8 +153,10 @@ void manager(){
 
 }
 
+
 int main() {
 
     manager();
+
     return 0;
 }
