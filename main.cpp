@@ -5,6 +5,9 @@
 #include <fstream>
 #include <unordered_map>
 #include "compfunc.h"
+#include <vector>
+#include <algorithm>
+
 
 typedef os::lab1::compfunc::comp_result<unsigned> shortDT;
 
@@ -12,17 +15,14 @@ namespace os::lab1::compfunc {
     comp_result<unsigned> compfunc(int);
 }
 
-// Мемоізаційний кеш
 std::unordered_map<int, shortDT> memo_cache;
 
 shortDT memoized_compfunc(int x) {
-    // Перевірка, чи результат вже є у кеші
     auto it = memo_cache.find(x);
     if (it != memo_cache.end()) {
         return it->second;
     }
 
-    // Якщо результат не знайдено, викликаємо функцію та зберігаємо результат у кеш
     auto result = os::lab1::compfunc::compfunc(x);
 
     while (std::holds_alternative<os::lab1::compfunc::soft_fault>(result)) {
@@ -76,63 +76,61 @@ void manager(){
     bool timeoutFlag = false;
 
 
+    std::vector<std::shared_future<shortDT>> non_working_futures;
+
     while (x != -1) {
-
-
         std::cin >> x;
         f_done = false;
         g_done = false;
 
-        auto fResult = std::async(std::launch::async , f, x);
+        auto fResult = std::async(std::launch::async, f, x);
         std::future_status statusF;
 
-
-        auto gResult = std::async(std::launch::async , g, x);
+        auto gResult = std::async(std::launch::async, g, x);
         std::future_status statusG;
 
         auto start_time = std::chrono::steady_clock::now();
 
-
         do {
-            switch(statusF = fResult.wait_for( time); statusF) {
+            switch (statusF = fResult.wait_for(time); statusF) {
                 case std::future_status::timeout:
                     std::cout << "WaitingF\n";
                     break;
                 case std::future_status::ready:
-                    if(!f_done){
+                    if (!f_done) {
                         std::cout << "readyF(x)!\n";
                         f_done = true;
                     }
-
                     break;
             }
 
-            switch(statusG = gResult.wait_for(time); statusG) {
+            switch (statusG = gResult.wait_for(time); statusG) {
                 case std::future_status::timeout:
                     std::cout << "WaitingG\n";
                     break;
                 case std::future_status::ready:
-                    if(!g_done){
+                    if (!g_done) {
                         std::cout << "readyG(x)!\n";
                         g_done = true;
                     }
                     break;
             }
 
-            if(std::chrono::steady_clock::now() - start_time >= timeout){
+            if (std::chrono::steady_clock::now() - start_time >= timeout) {
                 std::cout << "time out" << std::endl;
                 timeoutFlag = true;
+                non_working_futures.push_back(std::shared_future<shortDT>(fResult.share()));
+                non_working_futures.push_back(std::shared_future<shortDT>(gResult.share()));
                 break;
             }
-        } while (
-                (statusF != std::future_status::ready || statusG != std::future_status::ready));
+        } while (statusF != std::future_status::ready || statusG != std::future_status::ready);
 
-
-        if(timeoutFlag){
-            std::cout<< "Timeout. Calculation Failed" << std::endl;
-            //kill f g
+        if (timeoutFlag) {
+            std::cout << "Timeout. Calculation Failed" << std::endl;
+            // Kill f g (not implemented here)
+            non_working_futures.clear();  // Clear the vector after timeout
             break;
-        }else{
+        } else {
             resF = fResult.get();
             resG = gResult.get();
         }
@@ -148,6 +146,13 @@ void manager(){
         }else{
             std::cout << "Calculation failed. Both function did not response" << std::endl;
         }
+
+        non_working_futures.erase(
+                std::remove_if(
+                        non_working_futures.begin(),
+                        non_working_futures.end(),
+                        [](const std::shared_future<shortDT>& fut) { return fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }),
+                non_working_futures.end());
 
     }
 
